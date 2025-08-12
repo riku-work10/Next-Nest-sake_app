@@ -5,7 +5,7 @@ services:
   # サービス名
   frontend:
     # コンテナ名
-    container_name: frontend
+    container_name: frontend2
     # ソースからコンテナイメージを作成するためのビルド構成を指定する
     build:
       # Dockerfileを含むディレクトリへのパス、またはGitリポジトリへのURLを定義する。
@@ -34,10 +34,10 @@ services:
     # 詳細：https://docs.docker.com/reference/compose-file/networks/
     networks:
       # ネットワーク名
-      - project_network
+      - project_network2
 
   backend:
-    container_name: backend
+    container_name: backend2
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -52,20 +52,20 @@ services:
     depends_on:
       - db
     networks:
-      - project_network
+      - project_network2
 
   db:
-    container_name: project_mysql
+    container_name: project_mysql2
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: project
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
-      - project_network
+      - project_network2
 # 名前付きボリューム
 volumes:
   mysql_data:
@@ -75,9 +75,9 @@ volumes:
 # サービスが相互に通信できるようにする設定
 networks:
   # 名前
-  project_network:
+  project_network2:
     # ネットワーク名
-    name: project_network
+    name: project_network2
     #  デフォルトのネットワークドライバ
     #  詳細：https://docs.docker.com/engine/network/drivers/
     driver: bridge
