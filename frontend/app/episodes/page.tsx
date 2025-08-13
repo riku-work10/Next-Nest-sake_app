@@ -2,66 +2,79 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { Episode, User } from "@/types";
+import { Episode } from "@/types";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 export default function EpisodesPage() {
+  const { data: session } = useSession();
   const [episodes, setEpisodes] = useState<Episode[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [userId, setUserId] = useState<number>(0);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
+  // エピソード一覧取得
   const fetchEpisodes = async () => {
-    const res = await api.get<Episode[]>("/episodes");
-    setEpisodes(res.data);
+    try {
+      const res = await api.get<Episode[]>("/episodes");
+      setEpisodes(res.data);
+    } catch (err) {
+      console.error("Fetch episodes error:", err);
+    }
   };
 
-  const fetchUsers = async () => {
-    const res = await api.get<User[]>("/users");
-    setUsers(res.data);
-  };
-
+  // エピソード作成
   const createEpisode = async () => {
-    await api.post("/episodes", { userId, title, content });
-    setTitle("");
-    setContent("");
-    fetchEpisodes();
+    if (!session) return alert("ログインしてください");
+    if (!title || !content) return alert("タイトルと内容を入力してください");
+
+    try {
+      await api.post("/episodes", { title, content });
+      setTitle("");
+      setContent("");
+      fetchEpisodes();
+    } catch (err) {
+      console.error("Create episode error:", err);
+    }
+  };
+
+  // エピソード削除
+  const deleteEpisode = async (id: number) => {
+    if (!confirm("本当に削除しますか？")) return;
+    try {
+      await api.delete(`/episodes/${id}`);
+      fetchEpisodes();
+    } catch (err) {
+      console.error("Delete episode error:", err);
+    }
   };
 
   useEffect(() => {
     fetchEpisodes();
-    fetchUsers();
   }, []);
 
   return (
     <div style={{ padding: 20 }}>
       <h1>Episodes</h1>
 
-      <div>
-        <select onChange={(e) => setUserId(Number(e.target.value))}>
-          <option value="">Select User</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.name || u.email}
-            </option>
-          ))}
-        </select>
-
-        <input
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-
-        <input
-          placeholder="Content"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-        />
-
-        <button onClick={createEpisode}>Create</button>
-      </div>
+      {/* ログインユーザーのみ作成フォーム表示 */}
+      {session && (
+        <div style={{ marginBottom: "2rem" }}>
+          <h2>新規エピソード作成</h2>
+          <input
+            placeholder="タイトル"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <br />
+          <input
+            placeholder="内容"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+          <br />
+          <button onClick={createEpisode}>作成</button>
+        </div>
+      )}
 
       <ul>
         {episodes.map((ep) => (
@@ -73,21 +86,13 @@ export default function EpisodesPage() {
             <br />
             {ep.content}
             <br />
-            <button
-              onClick={async () => {
-                if (confirm("本当に削除しますか？")) {
-                  await api.delete(`/episodes/${ep.id}`);
-                  fetchEpisodes();
-                }
-              }}
-            >
-              削除
-            </button>
+            {/* ログインユーザーで自分の投稿のみ削除可能 */}
+            {session?.user?.email === ep.user?.email && (
+              <button onClick={() => deleteEpisode(ep.id)}>削除</button>
+            )}
           </li>
         ))}
       </ul>
-
-
     </div>
   );
 }
