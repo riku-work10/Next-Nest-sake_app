@@ -18,7 +18,7 @@ services:
       # バインドマウントのパスを指定
       - ./frontend:/app
       # 名前付きボリュームを指定
-      - frontend-node-modules:/app/node_modules
+      # - frontend-node-modules:/app/node_modules
     # ホストマシンとコンテナ間のポートマッピング
     ports:
       # ホストのポート：コンテナのポート
