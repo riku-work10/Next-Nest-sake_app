@@ -1,15 +1,20 @@
-import { Controller, Get, Post, Body, Param, Delete, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Put, UseGuards, Req } from '@nestjs/common';
 import { EpisodeService } from './episode.service';
 import { CreateEpisodeDto } from './dto/create-episode.dto';
 import { UpdateEpisodeDto } from './dto/update-episode.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('episodes')
 export class EpisodeController {
-  constructor(private readonly episodeService: EpisodeService) {}
+  constructor(private readonly episodeService: EpisodeService) { }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() dto: CreateEpisodeDto) {
-    return this.episodeService.create(dto);
+  create(@Body() dto: CreateEpisodeDto, @Req() req) {
+    return this.episodeService.create({
+      ...dto,
+      userId: req.user.sub, // JWTのsubから取得
+    });
   }
 
   @Get()
